@@ -1,0 +1,36 @@
+#!/bin/sh
+# version-up pre-push hook
+# Check version consistency before push
+
+# Check if version-up is installed
+if ! command -v version-up &> /dev/null; then
+  echo "⚠️  version-up not found, skipping version check"
+  exit 0
+fi
+
+echo "🔍 Checking version consistency..."
+
+# Get version from version.json
+VERSION_JSON=$(version-up show --format=version 2>/dev/null)
+
+if [ -z "$VERSION_JSON" ]; then
+  echo "❌ Failed to read version.json"
+  exit 1
+fi
+
+# Check package.json if exists
+if [ -f "package.json" ]; then
+  VERSION_PKG=$(node -p "require('./package.json').version" 2>/dev/null)
+  if [ "$VERSION_JSON" != "$VERSION_PKG" ]; then
+    echo "❌ Version mismatch:"
+    echo "   version.json: $VERSION_JSON"
+    echo "   package.json: $VERSION_PKG"
+    echo ""
+    echo "💡 Run 'version-up sync' to fix"
+    exit 1
+  fi
+fi
+
+echo "✅ Version consistency check passed ($VERSION_JSON)"
+exit 0
+

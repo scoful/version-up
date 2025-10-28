@@ -1,0 +1,44 @@
+name: Build and Deploy
+
+on:
+  workflow_run:
+    workflows: ["Version Bump"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  build:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./version.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Build
+        run: |
+          echo "Building v${{ steps.version.outputs.VERSION }}"
+          # Add your build commands here
+          # npm install
+          # npm run build
+
+      - name: Deploy
+        run: |
+          echo "Deploying v${{ steps.version.outputs.VERSION }}"
+          # Add your deployment commands here
+          # docker build -t myapp:${{ steps.version.outputs.VERSION }} .
+          # docker push myapp:${{ steps.version.outputs.VERSION }}
+

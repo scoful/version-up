@@ -1,0 +1,44 @@
+#!/bin/sh
+# version-up pre-commit hook
+# Auto-increment patch version on every commit
+
+# Check if version-up is installed
+if ! command -v version-up &> /dev/null; then
+  echo "⚠️  version-up not found, skipping version bump"
+  exit 0
+fi
+
+# Get current branch
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Skip version bump for certain branches (optional)
+# if [ "$BRANCH" = "develop" ] || [ "$BRANCH" = "staging" ]; then
+#   echo "ℹ️  Skipping version bump on $BRANCH branch"
+#   exit 0
+# fi
+
+# Bump patch version
+echo "🔄 Auto-incrementing patch version..."
+version-up patch
+
+# Add version files to commit
+git add version.json
+
+# Check if package.json exists and add it
+if [ -f "package.json" ]; then
+  git add package.json
+fi
+
+# Check if pyproject.toml exists and add it
+if [ -f "pyproject.toml" ]; then
+  git add pyproject.toml
+fi
+
+# Check if Cargo.toml exists and add it
+if [ -f "Cargo.toml" ]; then
+  git add Cargo.toml
+fi
+
+echo "✅ Version bumped successfully"
+exit 0
+

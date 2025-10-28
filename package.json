@@ -1,0 +1,37 @@
+{
+  "name": "version-up",
+  "version": "0.1.0",
+  "description": "Zero-dependency version management tool for multi-language projects",
+  "type": "module",
+  "main": "bin/version-up.js",
+  "bin": {
+    "version-up": "./bin/version-up.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "version",
+    "semver",
+    "semantic-versioning",
+    "git-hooks",
+    "ci-cd",
+    "multi-language"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "bin/",
+    "core/",
+    "templates/"
+  ],
+  "dependencies": {
+    "inquirer": "^9.2.0",
+    "chalk": "^4.1.2",
+    "@iarna/toml": "^2.2.5"
+  }
+}
+
