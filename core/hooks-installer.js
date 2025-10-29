@@ -51,7 +51,7 @@ class HooksInstaller {
 
     this.ensureHooksDir();
 
-    const hooks = ['pre-commit', 'post-commit', 'pre-push'];
+    const hooks = ['pre-commit', 'post-commit'];
     const installedHooks = [];
 
     for (const hookName of hooks) {
@@ -114,7 +114,7 @@ class HooksInstaller {
   async uninstall() {
     console.log(chalk.cyan('\n🗑️  卸载 Git Hooks...\n'));
 
-    const hooks = ['pre-commit', 'post-commit', 'pre-push'];
+    const hooks = ['pre-commit', 'post-commit'];
     const removedHooks = [];
 
     for (const hookName of hooks) {
@@ -150,7 +150,7 @@ class HooksInstaller {
   status() {
     console.log(chalk.cyan('\n📋 Git Hooks 状态:\n'));
 
-    const hooks = ['pre-commit', 'post-commit', 'pre-push'];
+    const hooks = ['pre-commit', 'post-commit'];
     const installedHooks = [];
     const missingHooks = [];
 
