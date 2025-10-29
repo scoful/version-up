@@ -46,7 +46,7 @@ class CIGenerator {
     // 确保目录存在
     if (!fs.existsSync(this.githubDir)) {
       fs.mkdirSync(this.githubDir, { recursive: true });
-      console.log(chalk.gray(`   创建目录: .github/workflows`));
+      console.log(chalk.cyan(`   创建目录: .github/workflows`));
     }
 
     if (workflowType === 'single') {

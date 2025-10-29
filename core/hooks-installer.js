@@ -51,7 +51,7 @@ class HooksInstaller {
 
     this.ensureHooksDir();
 
-    const hooks = ['pre-commit', 'pre-push'];
+    const hooks = ['pre-commit', 'post-commit', 'pre-push'];
     const installedHooks = [];
 
     for (const hookName of hooks) {
@@ -70,7 +70,7 @@ class HooksInstaller {
 
         // 如果已包含 version-up,跳过
         if (existingContent.includes('version-up')) {
-          console.log(chalk.gray(`   ℹ️  ${hookName} 已存在且包含 version-up,跳过\n`));
+          console.log(chalk.cyan(`   ℹ️  ${hookName} 已存在且包含 version-up,跳过\n`));
           installedHooks.push(hookName);
           continue;
         }
@@ -86,7 +86,7 @@ class HooksInstaller {
         ]);
 
         if (!overwrite) {
-          console.log(chalk.gray(`   ⏭️  跳过 ${hookName}\n`));
+          console.log(chalk.yellow(`   ⏭️  跳过 ${hookName}\n`));
           continue;
         }
       }
@@ -100,7 +100,7 @@ class HooksInstaller {
 
     if (installedHooks.length > 0) {
       console.log(chalk.green(`\n✅ Git Hooks 安装完成! (${installedHooks.join(', ')})\n`));
-      console.log(chalk.gray('   💡 现在每次 commit 时会自动递增版本号\n'));
+      console.log(chalk.yellow('   💡 现在每次 commit 时会自动递增版本号\n'));
     } else {
       console.log(chalk.yellow('\n⚠️  没有安装任何 hooks\n'));
     }
@@ -114,7 +114,7 @@ class HooksInstaller {
   async uninstall() {
     console.log(chalk.cyan('\n🗑️  卸载 Git Hooks...\n'));
 
-    const hooks = ['pre-commit', 'pre-push'];
+    const hooks = ['pre-commit', 'post-commit', 'pre-push'];
     const removedHooks = [];
 
     for (const hookName of hooks) {
@@ -140,7 +140,7 @@ class HooksInstaller {
     if (removedHooks.length > 0) {
       console.log(chalk.green(`\n✅ Git Hooks 卸载完成! (${removedHooks.join(', ')})\n`));
     } else {
-      console.log(chalk.gray('\n   ℹ️  没有找到 version-up 创建的 hooks\n'));
+      console.log(chalk.cyan('\n   ℹ️  没有找到 version-up 创建的 hooks\n'));
     }
   }
 
@@ -150,7 +150,7 @@ class HooksInstaller {
   status() {
     console.log(chalk.cyan('\n📋 Git Hooks 状态:\n'));
 
-    const hooks = ['pre-commit', 'pre-push'];
+    const hooks = ['pre-commit', 'post-commit', 'pre-push'];
     const installedHooks = [];
     const missingHooks = [];
 

@@ -1,6 +1,6 @@
 {
   "name": "@scoful/version-up",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.1",
   "description": "Automated version management tool with Git Hooks for multi-language projects",
   "type": "module",
   "main": "bin/version-up.js",
@@ -29,9 +29,8 @@
     "templates/"
   ],
   "dependencies": {
-    "inquirer": "^9.2.0",
+    "@iarna/toml": "^2.2.5",
     "chalk": "^4.1.2",
-    "@iarna/toml": "^2.2.5"
+    "inquirer": "^9.2.0"
   }
 }
-

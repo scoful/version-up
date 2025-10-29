@@ -67,12 +67,12 @@ class VersionManager {
   /**
    * 构建版本数据对象
    */
-  buildVersionData(version) {
+  buildVersionData(version, skipGitInfo = false) {
     return {
       version,
       buildTime: new Date().toISOString(),
-      gitCommit: this.getGitCommit(),
-      gitBranch: this.getGitBranch(),
+      gitCommit: skipGitInfo ? null : this.getGitCommit(),
+      gitBranch: skipGitInfo ? null : this.getGitBranch(),
       environment: process.env.NODE_ENV || 'development',
     };
   }
@@ -120,44 +120,44 @@ class VersionManager {
   /**
    * Patch 版本 +1
    */
-  patch() {
+  patch(skipGitInfo = false) {
     const current = this.read();
     const { major, minor, patch } = this.parseVersion(current.version);
     const newVersion = `${major}.${minor}.${patch + 1}`;
-    return this.set(newVersion);
+    return this.set(newVersion, skipGitInfo);
   }
 
   /**
    * Minor 版本 +1
    */
-  minor() {
+  minor(skipGitInfo = false) {
     const current = this.read();
     const { major, minor } = this.parseVersion(current.version);
     const newVersion = `${major}.${minor + 1}.0`;
-    return this.set(newVersion);
+    return this.set(newVersion, skipGitInfo);
   }
 
   /**
    * Major 版本 +1
    */
-  major() {
+  major(skipGitInfo = false) {
     const current = this.read();
     const { major } = this.parseVersion(current.version);
     const newVersion = `${major + 1}.0.0`;
-    return this.set(newVersion);
+    return this.set(newVersion, skipGitInfo);
   }
 
   /**
    * 设置指定版本
    */
-  set(version) {
+  set(version, skipGitInfo = false) {
     // 验证版本格式
     if (!this.isValidVersion(version)) {
       throw new Error(`Invalid version format: ${version}`);
     }
 
     const current = this.read();
-    const newData = this.buildVersionData(version);
+    const newData = this.buildVersionData(version, skipGitInfo);
 
     this.write(newData);
 
@@ -166,6 +166,21 @@ class VersionManager {
       new: newData.version,
       data: newData,
     };
+  }
+
+  /**
+   * 刷新 Git 信息 (不改变版本号)
+   */
+  refresh() {
+    const current = this.read();
+    const updated = {
+      ...current,
+      buildTime: new Date().toISOString(),
+      gitCommit: this.getGitCommit(),
+      gitBranch: this.getGitBranch(),
+    };
+    this.write(updated);
+    return updated;
   }
 
   /**

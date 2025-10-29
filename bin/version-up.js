@@ -64,22 +64,25 @@ class CLI {
 
       switch (command) {
         case 'patch':
-          await this.handlePatch();
+          await this.handlePatch(args);
           break;
         case 'minor':
-          await this.handleMinor();
+          await this.handleMinor(args);
           break;
         case 'major':
-          await this.handleMajor();
+          await this.handleMajor(args);
           break;
         case 'set':
-          await this.handleSet(args[1]);
+          await this.handleSet(args[1], args);
           break;
         case 'show':
           await this.handleShow(args);
           break;
         case 'sync':
           await this.handleSync();
+          break;
+        case 'refresh':
+          await this.handleRefresh();
           break;
         case 'help':
         case '--help':
@@ -158,8 +161,9 @@ class CLI {
   /**
    * 处理 patch 命令
    */
-  async handlePatch() {
-    const result = this.versionManager.patch();
+  async handlePatch(args) {
+    const skipGitInfo = args.includes('--skip-git-info');
+    const result = this.versionManager.patch(skipGitInfo);
     console.log(chalk.green(`\n✅ 版本已更新: ${result.old} → ${result.new}\n`));
     await this.syncFiles(result.new);
   }
@@ -167,8 +171,9 @@ class CLI {
   /**
    * 处理 minor 命令
    */
-  async handleMinor() {
-    const result = this.versionManager.minor();
+  async handleMinor(args) {
+    const skipGitInfo = args.includes('--skip-git-info');
+    const result = this.versionManager.minor(skipGitInfo);
     console.log(chalk.green(`\n✅ 版本已更新: ${result.old} → ${result.new}\n`));
     await this.syncFiles(result.new);
   }
@@ -176,8 +181,9 @@ class CLI {
   /**
    * 处理 major 命令
    */
-  async handleMajor() {
-    const result = this.versionManager.major();
+  async handleMajor(args) {
+    const skipGitInfo = args.includes('--skip-git-info');
+    const result = this.versionManager.major(skipGitInfo);
     console.log(chalk.green(`\n✅ 版本已更新: ${result.old} → ${result.new}\n`));
     await this.syncFiles(result.new);
   }
@@ -185,15 +191,26 @@ class CLI {
   /**
    * 处理 set 命令
    */
-  async handleSet(version) {
+  async handleSet(version, args) {
     if (!version) {
       console.log(chalk.red('\n❌ 用法: version-up set <version>\n'));
       process.exit(1);
     }
 
-    const result = this.versionManager.set(version);
+    const skipGitInfo = args.includes('--skip-git-info');
+    const result = this.versionManager.set(version, skipGitInfo);
     console.log(chalk.green(`\n✅ 版本已设置: ${result.old} → ${result.new}\n`));
     await this.syncFiles(result.new);
+  }
+
+  /**
+   * 处理 refresh 命令
+   */
+  async handleRefresh() {
+    const result = this.versionManager.refresh();
+    console.log(chalk.green(`\n✅ Git 信息已更新\n`));
+    console.log(chalk.cyan(`   Git Commit: ${result.gitCommit}`));
+    console.log(chalk.cyan(`   Git Branch: ${result.gitBranch}\n`));
   }
 
   /**
@@ -209,11 +226,11 @@ class CLI {
       console.log(JSON.stringify(data, null, 2));
     } else {
       console.log(chalk.cyan('\n📦 当前版本信息:\n'));
-      console.log(chalk.bold(`   版本: ${data.version}`));
-      console.log(chalk.gray(`   构建时间: ${data.buildTime}`));
-      console.log(chalk.gray(`   Git Commit: ${data.gitCommit}`));
-      console.log(chalk.gray(`   Git Branch: ${data.gitBranch}`));
-      console.log(chalk.gray(`   环境: ${data.environment}\n`));
+      console.log(chalk.bold.white(`   版本: ${data.version}`));
+      console.log(chalk.cyan(`   构建时间 (UTC): ${data.buildTime}`));
+      console.log(chalk.cyan(`   Git Commit: ${data.gitCommit}`));
+      console.log(chalk.cyan(`   Git Branch: ${data.gitBranch}`));
+      console.log(chalk.cyan(`   环境: ${data.environment}\n`));
     }
   }
 
@@ -264,12 +281,13 @@ class CLI {
     console.log(chalk.bold('用法:'));
     console.log('  version-up <command> [options]\n');
     console.log(chalk.bold('命令:'));
-    console.log('  init                 初始化 version-up');
+    console.log('  init                 初始化 Version-UP');
     console.log('  patch                patch 版本 +1');
     console.log('  minor                minor 版本 +1');
     console.log('  major                major 版本 +1');
     console.log('  set <version>        设置指定版本');
     console.log('  show                 显示当前版本');
+    console.log('  refresh              刷新 Git 信息 (不改变版本号)');
     console.log('  sync                 手动同步版本到其他文件');
     console.log('  hooks <sub>          管理 Git Hooks (install|uninstall|status)');
     console.log('  ci <sub>             管理 CI 模板 (generate|template|remove)');
@@ -278,6 +296,7 @@ class CLI {
     console.log(chalk.bold('选项:'));
     console.log('  --no-hooks           跳过 Git Hooks 安装 (init)');
     console.log('  --no-ci              跳过 CI 配置 (init)');
+    console.log('  --skip-git-info      跳过 Git 信息获取 (patch|minor|major|set)');
     console.log('  --format=<type>      输出格式 (show): version|json|full');
     console.log('  --debug, --verbose   显示详细调试信息\n');
     console.log(chalk.bold('示例:'));

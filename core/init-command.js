@@ -28,7 +28,7 @@ class InitCommand {
    * 执行初始化
    */
   async run(options = {}) {
-    console.log(chalk.bold.cyan('\n🚀 初始化 version-up\n'));
+    console.log(chalk.bold.cyan('\n🚀 初始化 Version-UP\n'));
 
     try {
       // 1. 检查 Git 仓库
@@ -51,7 +51,7 @@ class InitCommand {
       }
 
       console.log(chalk.bold.green('\n✅ 初始化完成!\n'));
-      console.log(chalk.gray('💡 运行 "version-up patch" 开始版本管理\n'));
+      console.log(chalk.yellow('💡 运行 "version-up patch" 开始版本管理\n'));
     } catch (error) {
       console.error(chalk.red(`\n❌ 初始化失败: ${error.message}\n`));
       throw error;
@@ -160,7 +160,7 @@ class InitCommand {
     if (installHooks) {
       await this.hooksInstaller.install();
     } else {
-      console.log(chalk.gray('⏭️  跳过 Git Hooks 安装\n'));
+      console.log(chalk.yellow('⏭️  跳过 Git Hooks 安装\n'));
     }
   }
 
@@ -169,7 +169,7 @@ class InitCommand {
    */
   async generateCI() {
     if (!this.ciGenerator.isGitHubRepo()) {
-      console.log(chalk.gray('ℹ️  未检测到 GitHub 仓库,跳过 CI 配置\n'));
+      console.log(chalk.yellow('ℹ️  未检测到 GitHub 仓库,跳过 CI 配置\n'));
       return;
     }
 
@@ -183,7 +183,7 @@ class InitCommand {
     ]);
 
     if (!generateCI) {
-      console.log(chalk.gray('⏭️  跳过 CI 配置\n'));
+      console.log(chalk.yellow('⏭️  跳过 CI 配置\n'));
       return;
     }
 
