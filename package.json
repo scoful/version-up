@@ -1,5 +1,5 @@
 {
-  "name": "version-up",
+  "name": "@scoful/version-up",
   "version": "0.1.0",
   "description": "Automated version management tool with Git Hooks for multi-language projects",
   "type": "module",

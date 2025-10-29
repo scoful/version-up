@@ -25,7 +25,7 @@ jobs:
           node-version: '20'
 
       - name: Install version-up
-        run: npm install -g version-up
+        run: npm install -g @scoful/version-up
 
       - name: Bump minor version
         run: |
