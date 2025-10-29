@@ -37,7 +37,7 @@ jobs:
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
-          git add version.json package.json
+          git add version.json
           git commit -m "chore: bump version to ${{ env.NEW_VERSION }} [skip ci]" || echo "No changes to commit"
           git push origin ${{ github.ref_name }}
 

@@ -65,7 +65,6 @@ class ConfigLoader {
       hooks: {
         enabled: false,
         preCommit: 'patch',
-        prePush: 'check',
       },
       git: {
         commitMessage: 'chore: bump version to {{version}} [skip ci]',

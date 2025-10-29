@@ -1,7 +1,7 @@
 {
   "name": "@scoful/version-up",
-  "version": "0.1.0-beta.1",
-  "description": "Automated version management tool with Git Hooks for multi-language projects",
+  "version": "0.1.0",
+  "description": "Automated semantic versioning with native Git hooks for multi-language projects",
   "type": "module",
   "main": "bin/version-up.js",
   "bin": {
@@ -12,21 +12,39 @@
   },
   "keywords": [
     "version",
+    "versioning",
     "semver",
     "semantic-versioning",
     "git-hooks",
+    "pre-commit",
+    "post-commit",
+    "automation",
     "ci-cd",
-    "multi-language"
+    "github-actions",
+    "multi-language",
+    "version-bump",
+    "release-management",
+    "changelog"
   ],
-  "author": "",
+  "author": "scoful",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/scoful/version-up.git"
+  },
+  "homepage": "https://github.com/scoful/version-up#readme",
+  "bugs": {
+    "url": "https://github.com/scoful/version-up/issues"
+  },
   "engines": {
     "node": ">=16.0.0"
   },
   "files": [
     "bin/",
     "core/",
-    "templates/"
+    "templates/",
+    "README.md",
+    "README-EN.md"
   ],
   "dependencies": {
     "@iarna/toml": "^2.2.5",
