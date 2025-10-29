@@ -25,6 +25,8 @@ class CLI {
     this.configLoader = null;
     this.fileSync = null;
     this.config = null;
+    // 检测调试模式
+    this.debug = process.argv.includes('--debug') || process.argv.includes('--verbose');
   }
 
   /**
@@ -109,7 +111,7 @@ class CLI {
       noCi: args.includes('--no-ci'),
     };
 
-    const initCommand = new InitCommand(this.cwd);
+    const initCommand = new InitCommand(this.cwd, this.debug);
     await initCommand.run(options);
   }
 
@@ -118,7 +120,7 @@ class CLI {
    */
   async handleSpecialCommands(command, args) {
     if (command === 'hooks') {
-      const hooksInstaller = new HooksInstaller(this.cwd);
+      const hooksInstaller = new HooksInstaller(this.cwd, this.debug);
       const subCommand = args[1];
 
       if (subCommand === 'install') {
@@ -237,8 +239,16 @@ class CLI {
 
   /**
    * 获取参数值
+   * 支持两种格式: --flag=value 或 --flag value
    */
   getArgValue(args, flag) {
+    // 方式 1: --flag=value
+    const withEquals = args.find(arg => arg.startsWith(`${flag}=`));
+    if (withEquals) {
+      return withEquals.split('=')[1];
+    }
+
+    // 方式 2: --flag value
     const index = args.indexOf(flag);
     if (index === -1 || index === args.length - 1) {
       return null;
@@ -268,7 +278,8 @@ class CLI {
     console.log(chalk.bold('选项:'));
     console.log('  --no-hooks           跳过 Git Hooks 安装 (init)');
     console.log('  --no-ci              跳过 CI 配置 (init)');
-    console.log('  --format=<type>      输出格式 (show): version|json|full\n');
+    console.log('  --format=<type>      输出格式 (show): version|json|full');
+    console.log('  --debug, --verbose   显示详细调试信息\n');
     console.log(chalk.bold('示例:'));
     console.log('  version-up init');
     console.log('  version-up patch');

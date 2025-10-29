@@ -125,7 +125,7 @@ npm link
 ---
 
 ### 决策 4：Git Hooks 安装策略
-**选择**：询问用户 + Husky 模式
+**选择**：询问用户 + Lefthook 模式
 
 **安装流程**：
 ```bash
@@ -134,18 +134,19 @@ version-up init
 # 输出：
 # ✅ 已创建 version.json (v0.0.0)
 # ✅ 已创建 .versionrc.json5
-# 
+#
 # ❓ 是否安装 Git Hooks 以自动管理版本？
 #    • pre-commit: 每次提交自动 patch+1
 #    • pre-push: 推送前检查版本一致性
-# 
+#
 # [Y/n]: _
 ```
 
-**Husky 检测逻辑**：
-1. 检测是否已安装 Husky（`.husky` 目录存在）
-2. 如果有 Husky → 创建 `.husky/pre-commit`
-3. 如果无 Husky → 直接创建 `.git/hooks/pre-commit`（检测冲突）
+**Lefthook 安装逻辑**：
+1. 检测 `lefthook` 命令是否已安装
+2. 如果已安装 → 创建 `lefthook.yml` 配置文件
+3. 如果未安装 → 提示用户安装 Lefthook
+4. 用户需手动运行 `lefthook install` 激活 hooks
 
 **命令**：
 ```bash
@@ -153,12 +154,13 @@ version-up init              # 交互式
 version-up init --no-hooks   # 跳过 hooks
 version-up hooks install     # 手动安装
 version-up hooks uninstall   # 卸载
+version-up hooks status      # 查看状态
 ```
 
 **影响**：
 - 用户有选择权
 - 避免意外覆盖现有 hooks
-- 支持 Husky 和原生 Git Hooks
+- 使用 Lefthook 实现团队共享配置
 
 ---
 
@@ -519,7 +521,7 @@ jobs:
 
 ### 阶段 3：自动化（1 天）
 - [ ] 实现 `init` 命令（交互式）
-- [ ] 实现 Git Hooks 安装（Husky 模式）
+- [ ] 实现 Git Hooks 安装（Lefthook 模式）
 - [ ] 实现 GitHub Actions 模板生成
 
 ### 阶段 4：发布（0.5 天）
@@ -542,7 +544,7 @@ jobs:
 ## 📚 参考资料
 
 - 语义化版本规范：https://semver.org/
-- Husky：https://typicode.github.io/husky/
+- Lefthook：https://github.com/evilmartians/lefthook
 - JSON5：https://json5.org/
 - GitHub Actions：https://docs.github.com/en/actions
 

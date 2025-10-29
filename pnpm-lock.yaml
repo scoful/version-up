@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@evilmartians/lefthook':
+        specifier: '>=1.0.0'
+        version: 1.13.6
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
@@ -19,6 +22,12 @@ importers:
         version: 9.3.8
 
 packages:
+
+  '@evilmartians/lefthook@1.13.6':
+    resolution: {integrity: sha512-79vplrUBWL4Fkt59YkEBdSpqBVhNrY8t5+jEp+wX5QbsmbQLcSULqwS7FmbNRyECa2LWMrUWpe6ENIfNwB4jiw==}
+    cpu: [x64, arm64, ia32]
+    os: [darwin, linux, win32]
+    hasBin: true
 
   '@iarna/toml@2.2.5':
     resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
@@ -204,6 +213,8 @@ packages:
     engines: {node: '>=18'}
 
 snapshots:
+
+  '@evilmartians/lefthook@1.13.6': {}
 
   '@iarna/toml@2.2.5': {}
 

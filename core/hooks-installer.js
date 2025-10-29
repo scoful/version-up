@@ -12,13 +12,14 @@ const __dirname = dirname(__filename);
 
 /**
  * Git Hooks 安装器
- * 支持 Husky 和原生 Git Hooks
+ * 使用原生 Git Hooks
  */
 class HooksInstaller {
-  constructor(cwd = process.cwd()) {
+  constructor(cwd = process.cwd(), debug = false) {
     this.cwd = cwd;
+    this.debug = debug;
     this.gitDir = path.join(cwd, '.git');
-    this.huskyDir = path.join(cwd, '.husky');
+    this.hooksDir = path.join(this.gitDir, 'hooks');
     this.templatesDir = path.join(__dirname, '..', 'templates');
   }
 
@@ -30,10 +31,12 @@ class HooksInstaller {
   }
 
   /**
-   * 检测是否使用 Husky
+   * 确保 hooks 目录存在
    */
-  hasHusky() {
-    return fs.existsSync(this.huskyDir);
+  ensureHooksDir() {
+    if (!fs.existsSync(this.hooksDir)) {
+      fs.mkdirSync(this.hooksDir, { recursive: true });
+    }
   }
 
   /**
@@ -44,133 +47,101 @@ class HooksInstaller {
       throw new Error('Not a git repository. Please run "git init" first.');
     }
 
-    const useHusky = this.hasHusky();
+    console.log(chalk.cyan('\n🔧 安装 Git Hooks (原生方式)...\n'));
 
-    console.log(chalk.cyan('\n🔧 安装 Git Hooks...'));
+    this.ensureHooksDir();
 
-    if (useHusky) {
-      console.log(chalk.gray('   检测到 Husky,使用 Husky 模式'));
-      console.log(chalk.gray('   Hooks 将写入 .husky/ 目录 (可提交到 Git)\n'));
-      await this.installHuskyHooks();
+    const hooks = ['pre-commit', 'pre-push'];
+    const installedHooks = [];
+
+    for (const hookName of hooks) {
+      const templatePath = path.join(this.templatesDir, `${hookName}.template`);
+      const hookPath = path.join(this.hooksDir, hookName);
+
+      // 检查模板是否存在
+      if (!fs.existsSync(templatePath)) {
+        console.log(chalk.yellow(`   ⚠️  模板不存在: ${hookName}.template\n`));
+        continue;
+      }
+
+      // 检查 hook 是否已存在
+      if (fs.existsSync(hookPath)) {
+        const existingContent = fs.readFileSync(hookPath, 'utf-8');
+
+        // 如果已包含 version-up,跳过
+        if (existingContent.includes('version-up')) {
+          console.log(chalk.gray(`   ℹ️  ${hookName} 已存在且包含 version-up,跳过\n`));
+          installedHooks.push(hookName);
+          continue;
+        }
+
+        // 询问用户是否覆盖
+        const { overwrite } = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'overwrite',
+            message: `${hookName} 已存在,是否覆盖?`,
+            default: false,
+          },
+        ]);
+
+        if (!overwrite) {
+          console.log(chalk.gray(`   ⏭️  跳过 ${hookName}\n`));
+          continue;
+        }
+      }
+
+      // 复制模板并设置可执行权限
+      const templateContent = fs.readFileSync(templatePath, 'utf-8');
+      fs.writeFileSync(hookPath, templateContent, { mode: 0o755 });
+      console.log(chalk.green(`   ✅ 已安装 ${hookName}\n`));
+      installedHooks.push(hookName);
+    }
+
+    if (installedHooks.length > 0) {
+      console.log(chalk.green(`\n✅ Git Hooks 安装完成! (${installedHooks.join(', ')})\n`));
+      console.log(chalk.gray('   💡 现在每次 commit 时会自动递增版本号\n'));
     } else {
-      console.log(chalk.gray('   使用原生 Git Hooks'));
-      console.log(chalk.yellow('   ⚠️  Hooks 将写入 .git/hooks/ (不会提交到 Git)'));
-      console.log(chalk.gray('   💡 建议安装 Husky 以便团队共享 hooks\n'));
-      await this.installNativeHooks();
+      console.log(chalk.yellow('\n⚠️  没有安装任何 hooks\n'));
     }
-
-    console.log(chalk.green('✅ Git Hooks 安装成功!\n'));
   }
 
-  /**
-   * 安装 Husky Hooks
-   */
-  async installHuskyHooks() {
-    await this.installHook('pre-commit', this.huskyDir);
-    await this.installHook('pre-push', this.huskyDir);
-  }
 
-  /**
-   * 安装原生 Git Hooks
-   */
-  async installNativeHooks() {
-    const hooksDir = path.join(this.gitDir, 'hooks');
-
-    // 确保 hooks 目录存在
-    if (!fs.existsSync(hooksDir)) {
-      fs.mkdirSync(hooksDir, { recursive: true });
-    }
-
-    await this.installHook('pre-commit', hooksDir);
-    await this.installHook('pre-push', hooksDir);
-  }
-
-  /**
-   * 安装单个 Hook
-   */
-  async installHook(hookName, targetDir) {
-    const templatePath = path.join(this.templatesDir, `${hookName}.template`);
-    const targetPath = path.join(targetDir, hookName);
-
-    // 检查模板是否存在
-    if (!fs.existsSync(templatePath)) {
-      console.log(chalk.yellow(`   ⚠️  模板不存在: ${hookName}.template`));
-      return;
-    }
-
-    const templateContent = fs.readFileSync(templatePath, 'utf-8');
-
-    // 检查是否已存在 hook
-    if (fs.existsSync(targetPath)) {
-      const existingContent = fs.readFileSync(targetPath, 'utf-8');
-
-      // 如果已包含 version-up,跳过
-      if (existingContent.includes('version-up')) {
-        console.log(chalk.gray(`   ℹ️  ${hookName} 已安装,跳过`));
-        return;
-      }
-
-      // 询问用户是否追加
-      const { append } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'append',
-          message: `${hookName} 已存在,是否追加 version-up 逻辑?`,
-          default: true,
-        },
-      ]);
-
-      if (append) {
-        // 追加到现有 hook
-        const newContent = existingContent + '\n\n' + templateContent;
-        fs.writeFileSync(targetPath, newContent, { mode: 0o755 });
-        console.log(chalk.green(`   ✅ ${hookName} (已追加)`));
-      } else {
-        console.log(chalk.gray(`   ⏭️  ${hookName} (跳过)`));
-      }
-      return;
-    }
-
-    // 复制模板
-    fs.writeFileSync(targetPath, templateContent, { mode: 0o755 });
-    console.log(chalk.green(`   ✅ ${hookName}`));
-  }
 
   /**
    * 卸载 Git Hooks
    */
-  uninstall() {
-    console.log(chalk.cyan('\n🗑️  卸载 Git Hooks...'));
+  async uninstall() {
+    console.log(chalk.cyan('\n🗑️  卸载 Git Hooks...\n'));
 
-    const useHusky = this.hasHusky();
-    const hooksDir = useHusky ? this.huskyDir : path.join(this.gitDir, 'hooks');
+    const hooks = ['pre-commit', 'pre-push'];
+    const removedHooks = [];
 
-    this.removeHook('pre-commit', hooksDir);
-    this.removeHook('pre-push', hooksDir);
+    for (const hookName of hooks) {
+      const hookPath = path.join(this.hooksDir, hookName);
 
-    console.log(chalk.green('✅ Git Hooks 卸载成功!\n'));
-  }
+      if (!fs.existsSync(hookPath)) {
+        continue;
+      }
 
-  /**
-   * 删除单个 Hook
-   */
-  removeHook(hookName, targetDir) {
-    const targetPath = path.join(targetDir, hookName);
+      // 检查是否是 version-up 创建的 hook
+      const content = fs.readFileSync(hookPath, 'utf-8');
+      if (!content.includes('version-up')) {
+        console.log(chalk.yellow(`   ⚠️  ${hookName} 不是 version-up 创建的,跳过删除\n`));
+        continue;
+      }
 
-    if (!fs.existsSync(targetPath)) {
-      console.log(chalk.gray(`   ℹ️  ${hookName} 不存在,跳过`));
-      return;
+      // 删除 hook
+      fs.unlinkSync(hookPath);
+      console.log(chalk.green(`   ✅ 已删除 ${hookName}\n`));
+      removedHooks.push(hookName);
     }
 
-    // 检查是否是 version-up 创建的 hook
-    const content = fs.readFileSync(targetPath, 'utf-8');
-    if (!content.includes('version-up')) {
-      console.log(chalk.yellow(`   ⚠️  ${hookName} 不是 version-up 创建的,跳过删除`));
-      return;
+    if (removedHooks.length > 0) {
+      console.log(chalk.green(`\n✅ Git Hooks 卸载完成! (${removedHooks.join(', ')})\n`));
+    } else {
+      console.log(chalk.gray('\n   ℹ️  没有找到 version-up 创建的 hooks\n'));
     }
-
-    fs.unlinkSync(targetPath);
-    console.log(chalk.green(`   ✅ ${hookName} 已删除`));
   }
 
   /**
@@ -179,35 +150,35 @@ class HooksInstaller {
   status() {
     console.log(chalk.cyan('\n📋 Git Hooks 状态:\n'));
 
-    const useHusky = this.hasHusky();
-    const hooksDir = useHusky ? this.huskyDir : path.join(this.gitDir, 'hooks');
+    const hooks = ['pre-commit', 'pre-push'];
+    const installedHooks = [];
+    const missingHooks = [];
 
-    console.log(chalk.gray(`   模式: ${useHusky ? 'Husky' : '原生 Git Hooks'}`));
-    console.log(chalk.gray(`   目录: ${hooksDir}\n`));
+    for (const hookName of hooks) {
+      const hookPath = path.join(this.hooksDir, hookName);
 
-    this.checkHook('pre-commit', hooksDir);
-    this.checkHook('pre-push', hooksDir);
+      if (fs.existsSync(hookPath)) {
+        const content = fs.readFileSync(hookPath, 'utf-8');
+        const isVersionUp = content.includes('version-up');
 
-    console.log();
-  }
-
-  /**
-   * 检查单个 Hook 状态
-   */
-  checkHook(hookName, targetDir) {
-    const targetPath = path.join(targetDir, hookName);
-
-    if (fs.existsSync(targetPath)) {
-      const content = fs.readFileSync(targetPath, 'utf-8');
-      const isVersionUp = content.includes('version-up');
-      
-      if (isVersionUp) {
-        console.log(chalk.green(`   ✅ ${hookName} (已安装)`));
+        if (isVersionUp) {
+          console.log(chalk.green(`   ✅ ${hookName} (version-up)`));
+          installedHooks.push(hookName);
+        } else {
+          console.log(chalk.yellow(`   ⚠️  ${hookName} (非 version-up)`));
+        }
       } else {
-        console.log(chalk.yellow(`   ⚠️  ${hookName} (存在但非 version-up)`));
+        console.log(chalk.red(`   ❌ ${hookName} (未安装)`));
+        missingHooks.push(hookName);
       }
-    } else {
-      console.log(chalk.gray(`   ❌ ${hookName} (未安装)`));
+    }
+
+    console.log('');
+
+    if (installedHooks.length === hooks.length) {
+      console.log(chalk.green('   ✅ 所有 hooks 已安装并激活\n'));
+    } else if (missingHooks.length > 0) {
+      console.log(chalk.yellow(`   💡 请运行 version-up hooks install 安装 hooks\n`));
     }
   }
 }

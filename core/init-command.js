@@ -15,11 +15,12 @@ import CIGenerator from './ci-generator.js';
  * 交互式初始化 version-up
  */
 class InitCommand {
-  constructor(cwd = process.cwd()) {
+  constructor(cwd = process.cwd(), debug = false) {
     this.cwd = cwd;
+    this.debug = debug;
     this.configLoader = new ConfigLoader(cwd);
     this.versionManager = new VersionManager(cwd);
-    this.hooksInstaller = new HooksInstaller(cwd);
+    this.hooksInstaller = new HooksInstaller(cwd, debug);
     this.ciGenerator = new CIGenerator(cwd);
   }
 
@@ -140,91 +141,12 @@ class InitCommand {
     console.log(chalk.green('✅ 已创建 .versionrc\n'));
   }
 
-  /**
-   * 检测包管理器
-   */
-  detectPackageManager() {
-    if (fs.existsSync(path.join(this.cwd, 'pnpm-lock.yaml'))) {
-      return 'pnpm';
-    }
-    if (fs.existsSync(path.join(this.cwd, 'yarn.lock'))) {
-      return 'yarn';
-    }
-    if (fs.existsSync(path.join(this.cwd, 'package-lock.json'))) {
-      return 'npm';
-    }
-    return null;
-  }
 
-  /**
-   * 询问包管理器
-   */
-  async askPackageManager() {
-    const detected = this.detectPackageManager();
-
-    if (detected) {
-      console.log(chalk.gray(`   检测到 ${detected},将使用 ${detected} 安装\n`));
-      return detected;
-    }
-
-    const { pm } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'pm',
-        message: '选择包管理器:',
-        choices: [
-          { name: 'pnpm (推荐)', value: 'pnpm' },
-          { name: 'npm', value: 'npm' },
-          { name: 'yarn', value: 'yarn' },
-        ],
-        default: 'pnpm',
-      },
-    ]);
-
-    return pm;
-  }
 
   /**
    * 安装 Git Hooks
    */
   async installHooks() {
-    // 检测是否有 Husky
-    const hasHusky = this.hooksInstaller.hasHusky();
-    const hasPackageJson = fs.existsSync(path.join(this.cwd, 'package.json'));
-
-    // 如果没有 Husky 且有 package.json,询问是否安装
-    if (!hasHusky && hasPackageJson) {
-      const { installHusky } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'installHusky',
-          message: '检测到未安装 Husky,是否安装? (推荐,便于团队共享 hooks)',
-          default: true,
-        },
-      ]);
-
-      if (installHusky) {
-        console.log(chalk.cyan('\n📦 安装 Husky...\n'));
-
-        // 询问包管理器
-        const pm = await this.askPackageManager();
-
-        try {
-          execSync(`${pm} install husky --save-dev`, {
-            cwd: this.cwd,
-            stdio: 'inherit',
-          });
-          execSync(`${pm === 'npm' ? 'npx' : pm} husky init`, {
-            cwd: this.cwd,
-            stdio: 'inherit',
-          });
-          console.log(chalk.green('\n✅ Husky 安装成功!\n'));
-        } catch (error) {
-          console.log(chalk.yellow('\n⚠️  Husky 安装失败,将使用原生 Git Hooks\n'));
-        }
-      }
-    }
-
     // 询问是否安装 Git Hooks
     const { installHooks } = await inquirer.prompt([
       {

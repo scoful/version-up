@@ -1,7 +1,7 @@
 {
   "name": "version-up",
   "version": "0.1.0",
-  "description": "Zero-dependency version management tool for multi-language projects",
+  "description": "Automated version management tool with Git Hooks for multi-language projects",
   "type": "module",
   "main": "bin/version-up.js",
   "bin": {
