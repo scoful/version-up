@@ -67,13 +67,13 @@ version-up show
 
 Output:
 ```
-📦 当前版本信息:
+📦 Current Version Info:
 
-   版本: 0.0.2
-   构建时间 (UTC): 2025-10-29T08:30:45.123Z
+   Version: 0.0.2
+   Build Time (UTC): 2025-10-29T08:30:45.123Z
    Git Commit: a1b2c3d
    Git Branch: master
-   环境: development
+   Environment: development
 ```
 
 ## 📖 Commands
@@ -120,7 +120,7 @@ version-up sync     # Sync version to other files
 
 ## ⚙️ Configuration
 
-Create `.versionrc.json` in your project root:
+Create `.versionrc` in your project root:
 
 ```json
 {
@@ -150,11 +150,12 @@ Create `.versionrc.json` in your project root:
 
 ### pre-commit
 
-Automatically increments patch version on every commit:
+Automatically increments patch version and adds all synced files on every commit:
 
 ```bash
 version-up patch --skip-git-info
 git add version.json
+# Automatically adds all files in syncTargets (e.g., package.json, Cargo.toml)
 ```
 
 ### post-commit
@@ -173,9 +174,9 @@ Generate workflows with `version-up ci generate`:
 
 ### version-bump.yml
 
-Automatically bumps minor version on every push to main/master branch.
+Automatically bumps version on every push to main/master branch.
 
-You can customize the bump type by editing the workflow file to use `patch`, `minor`, or `major`.
+During `init`, you can choose the bump type (`patch`, `minor`, or `major`), which is saved to the `ci.onPush` field in `.versionrc`.
 
 ### build-deploy.yml
 

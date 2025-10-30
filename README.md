@@ -120,7 +120,7 @@ version-up sync     # 同步版本到其他文件
 
 ## ⚙️ 配置
 
-在项目根目录创建 `.versionrc.json`：
+在项目根目录创建 `.versionrc`：
 
 ```json
 {
@@ -150,11 +150,12 @@ version-up sync     # 同步版本到其他文件
 
 ### pre-commit
 
-每次提交时自动递增 patch 版本：
+每次提交时自动递增 patch 版本，并添加所有同步的文件：
 
 ```bash
 version-up patch --skip-git-info
 git add version.json
+# 自动添加所有 syncTargets 中的文件（如 package.json, Cargo.toml 等）
 ```
 
 ### post-commit
@@ -173,9 +174,9 @@ git commit --amend --no-edit --no-verify
 
 ### version-bump.yml
 
-每次推送到 main/master 分支时自动递增 minor 版本。
+每次推送到 main/master 分支时自动递增版本。
 
-你可以通过编辑工作流文件来自定义递增类型（`patch`、`minor` 或 `major`）。
+在 `init` 时可以选择递增类型（`patch`、`minor` 或 `major`），配置会保存到 `.versionrc` 的 `ci.onPush` 字段。
 
 ### build-deploy.yml
 

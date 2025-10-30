@@ -66,49 +66,45 @@ npm link
 ---
 
 ### 决策 3：配置文件格式
-**选择**：JSON5
+**选择**：JSON
 
-**配置文件名**：`.versionrc.json5` 或 `.versionrc`
+**配置文件名**：`.versionrc`
 
 **示例配置**：
-```json5
+```json
 {
-  // 版本信息文件路径
   "versionFile": "version.json",
-  
-  // 同步目标文件配置
+
   "syncTargets": [
     {
       "file": "package.json",
       "path": "version",
       "adapter": "package-json",
-      "required": true,  // 必须存在
+      "required": true
     },
     {
       "file": "pyproject.toml",
       "path": "tool.poetry.version",
       "adapter": "pyproject-toml",
-      "required": false,  // 可选
-    },
+      "required": false
+    }
   ],
-  
-  // Git Hooks 配置
+
   "hooks": {
     "enabled": true,
-    "preCommit": "patch",  // 每次 commit 自动 patch+1
+    "preCommit": "patch"
   },
 
-  // CI/CD 配置
   "ci": {
-    "onPush": "minor",  // push 时自动 minor+1
-  },
+    "onPush": "minor"
+  }
 }
 ```
 
 **影响**：
-- 需要内嵌 JSON5 解析器（约 5KB）
-- 支持注释和尾随逗号
-- 用户体验更好
+- 使用标准 JSON 格式
+- 无需额外解析器
+- 简单可靠
 
 ---
 
@@ -148,7 +144,7 @@ version-up hooks status      # 查看状态
 **影响**：
 - 用户有选择权
 - 避免意外覆盖现有 hooks
-- 使用 Lefthook 实现团队共享配置
+- 使用原生 Git Hooks，轻量级无依赖
 
 ---
 
@@ -197,7 +193,7 @@ version-up templates github  # 只输出模板
 ```
 project/
 ├── version.json          # 版本信息（SSOT）
-├── .versionrc.json5      # 配置文件
+├── .versionrc            # 配置文件
 ├── package.json          # 同步目标
 ├── pyproject.toml        # 同步目标（如果有）
 └── .git/
@@ -232,18 +228,18 @@ version-up patch
 ```
 
 **配置示例**：
-```json5
+```json
 {
   "syncTargets": [
     {
       "file": "package.json",
-      "required": true,  // 必须存在，失败则中断
+      "required": true
     },
     {
       "file": "pyproject.toml",
-      "required": false,  // 可选，失败则跳过
-    },
-  ],
+      "required": false
+    }
+  ]
 }
 ```
 
@@ -304,12 +300,12 @@ version-up/
 │   ├── version-up.bat      # Windows 入口
 │   └── version-up.ps1      # PowerShell 入口
 ├── core/
-│   └── version-up-core.js  # 单文件核心逻辑（零依赖）
+│   └── version-up-core.js  # 单文件核心逻辑
 ├── templates/
 │   ├── github-actions/
 │   │   ├── version-bump.yml
 │   │   └── build-deploy.yml
-│   └── .versionrc.json5
+│   └── .versionrc.template
 ├── package.json
 ├── README.md
 └── LICENSE
@@ -331,7 +327,7 @@ version-up templates github  # 输出 GitHub Actions 模板
 
 ### 技术栈
 - **语言**：JavaScript（Node.js）
-- **依赖**：零 npm 依赖（内嵌 JSON5 解析器）
+- **依赖**：chalk, inquirer, @iarna/toml
 - **运行时**：Node.js 16+
 - **跨平台**：Shell（Unix）+ Batch（Windows）+ PowerShell
 
@@ -456,7 +452,24 @@ jobs:
           version-up {{ON_PUSH}}
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
-          git add version.json package.json
+          git add version.json
+
+          # 动态添加所有 syncTargets 中的文件
+          if [ -f .versionrc ]; then
+            SYNC_FILES=$(node -e "
+              try {
+                const fs = require('fs');
+                const config = JSON.parse(fs.readFileSync('.versionrc', 'utf-8'));
+                if (config.syncTargets && config.syncTargets.length > 0) {
+                  console.log(config.syncTargets.map(t => t.file).join(' '));
+                }
+              } catch (e) {}
+            ")
+            if [ -n \"$SYNC_FILES\" ]; then
+              git add $SYNC_FILES 2>/dev/null || true
+            fi
+          fi
+
           NEW_VERSION=$(version-up show --format=version)
           git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
           git push origin main
@@ -505,14 +518,14 @@ jobs:
 - [ ] 实现基础命令（`patch`, `minor`, `major`, `show`, `set`）
 
 ### 阶段 2：配置与同步（1 天）
-- [ ] 实现 JSON 配置解析
-- [ ] 实现 Adapter 系统（`package.json`, `pyproject.toml` 等）
-- [ ] 实现同步逻辑（基于 `required` 字段）
+- [x] 实现 JSON 配置解析
+- [x] 实现 Adapter 系统（`package.json`, `pyproject.toml` 等）
+- [x] 实现同步逻辑（基于 `required` 字段）
 
 ### 阶段 3：自动化（1 天）
-- [ ] 实现 `init` 命令（交互式）
-- [ ] 实现 Git Hooks 安装（原生 Git Hooks）
-- [ ] 实现 GitHub Actions 模板生成（支持 ci.onPush 配置）
+- [x] 实现 `init` 命令（交互式）
+- [x] 实现 Git Hooks 安装（原生 Git Hooks）
+- [x] 实现 GitHub Actions 模板生成（支持 ci.onPush 配置）
 
 ### 阶段 4：发布（0.5 天）
 - [ ] 创建 `package.json`（npm 发布配置）
