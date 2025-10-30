@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import ConfigLoader from './config-loader.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -45,6 +46,16 @@ class HooksInstaller {
   async install() {
     if (!this.isGitRepo()) {
       throw new Error('Not a git repository. Please run "git init" first.');
+    }
+
+    // 读取配置检查 hooks.enabled
+    const configLoader = new ConfigLoader(this.cwd);
+    const config = configLoader.load();
+
+    if (config.hooks.enabled === false) {
+      console.log(chalk.yellow('\n⚠️  Hooks 已在配置中禁用 (hooks.enabled: false)\n'));
+      console.log(chalk.cyan('   💡 请修改 .versionrc.json 中的 hooks.enabled 为 true\n'));
+      return;
     }
 
     console.log(chalk.cyan('\n🔧 安装 Git Hooks (原生方式)...\n'));
@@ -92,7 +103,14 @@ class HooksInstaller {
       }
 
       // 复制模板并设置可执行权限
-      const templateContent = fs.readFileSync(templatePath, 'utf-8');
+      let templateContent = fs.readFileSync(templatePath, 'utf-8');
+
+      // 替换占位符 (pre-commit hook)
+      if (hookName === 'pre-commit') {
+        const bumpType = config.hooks.preCommit || 'patch';
+        templateContent = templateContent.replace(/\{\{BUMP_TYPE\}\}/g, bumpType);
+      }
+
       fs.writeFileSync(hookPath, templateContent, { mode: 0o755 });
       console.log(chalk.green(`   ✅ 已安装 ${hookName}\n`));
       installedHooks.push(hookName);

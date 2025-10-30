@@ -37,15 +37,10 @@ class InitCommand {
       // 2. 创建版本文件
       await this.createVersionFile();
 
-      // 3. 创建配置文件
-      await this.createConfigFile();
+      // 3. 创建配置文件（包含 hooks 安装）
+      await this.createConfigFile(options);
 
-      // 4. 安装 Git Hooks (可选)
-      if (!options.noHooks) {
-        await this.installHooks();
-      }
-
-      // 5. 生成 CI 模板 (可选)
+      // 4. 生成 CI 模板 (可选)
       if (!options.noCi) {
         await this.generateCI();
       }
@@ -105,7 +100,7 @@ class InitCommand {
   /**
    * 创建配置文件
    */
-  async createConfigFile() {
+  async createConfigFile(options = {}) {
     const configPath = path.join(this.cwd, '.versionrc');
 
     if (fs.existsSync(configPath)) {
@@ -113,32 +108,65 @@ class InitCommand {
       return;
     }
 
-    // 智能检测 package.json
     const config = this.configLoader.getDefaultConfig();
     const packageJsonPath = path.join(this.cwd, 'package.json');
 
-    if (fs.existsSync(packageJsonPath)) {
-      const { syncPackageJson } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'syncPackageJson',
-          message: '检测到 package.json,是否同步版本?',
-          default: true,
-        },
-      ]);
+    // 1. 询问 Hooks 配置（包含版本同步）
+    console.log(chalk.cyan('\n📝 配置 Git Hooks:\n'));
 
-      if (syncPackageJson) {
-        config.syncTargets.push({
-          file: 'package.json',
-          path: 'version',
-          adapter: 'package-json',
-          required: true,
-        });
-      }
+    const questions = [
+      {
+        type: 'confirm',
+        name: 'enableHooks',
+        message: '是否启用 Git Hooks 自动版本管理?',
+        default: true,
+      },
+      {
+        type: 'list',
+        name: 'preCommitType',
+        message: '每次 commit 时自动递增哪种版本?',
+        choices: [
+          { name: 'patch (0.0.1 → 0.0.2) - 推荐', value: 'patch' },
+          { name: 'minor (0.0.1 → 0.1.0)', value: 'minor' },
+          { name: 'major (0.0.1 → 1.0.0)', value: 'major' },
+        ],
+        default: 'patch',
+        when: (answers) => answers.enableHooks,
+      },
+    ];
+
+    // 如果检测到 package.json，添加同步询问
+    if (fs.existsSync(packageJsonPath)) {
+      questions.push({
+        type: 'confirm',
+        name: 'syncPackageJson',
+        message: '检测到 package.json，是否同步版本?',
+        default: true,
+      });
+    }
+
+    const { enableHooks, preCommitType, syncPackageJson } = await inquirer.prompt(questions);
+
+    config.hooks.enabled = enableHooks;
+    if (preCommitType) config.hooks.preCommit = preCommitType;
+
+    // 配置版本同步
+    if (syncPackageJson) {
+      config.syncTargets.push({
+        file: 'package.json',
+        path: 'version',
+        adapter: 'package-json',
+        required: true,
+      });
     }
 
     this.configLoader.save(config, configPath);
-    console.log(chalk.green('✅ 已创建 .versionrc\n'));
+    console.log(chalk.green('\n✅ 已创建 .versionrc\n'));
+
+    // 如果启用 hooks 且没有 --no-hooks 参数，立即安装
+    if (enableHooks && !options.noHooks) {
+      await this.hooksInstaller.install();
+    }
   }
 
 
@@ -168,16 +196,11 @@ class InitCommand {
    * 生成 CI 模板
    */
   async generateCI() {
-    if (!this.ciGenerator.isGitHubRepo()) {
-      console.log(chalk.yellow('ℹ️  未检测到 GitHub 仓库,跳过 CI 配置\n'));
-      return;
-    }
-
     const { generateCI } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'generateCI',
-        message: '检测到 GitHub 仓库,是否生成 GitHub Actions 工作流?',
+        message: '是否生成 GitHub Actions 工作流?',
         default: true,
       },
     ]);
@@ -187,7 +210,18 @@ class InitCommand {
       return;
     }
 
-    const { workflowType } = await inquirer.prompt([
+    const { onPushType, workflowType } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'onPushType',
+        message: '每次 push 时自动递增哪种版本?',
+        choices: [
+          { name: 'patch (0.0.1 → 0.0.2)', value: 'patch' },
+          { name: 'minor (0.0.1 → 0.1.0) - 推荐', value: 'minor' },
+          { name: 'major (0.0.1 → 1.0.0)', value: 'major' },
+        ],
+        default: 'minor',
+      },
       {
         type: 'list',
         name: 'workflowType',
@@ -199,6 +233,13 @@ class InitCommand {
         default: 'separated',
       },
     ]);
+
+    // 更新配置文件中的 ci.onPush
+    const configPath = path.join(this.cwd, '.versionrc');
+    const config = this.configLoader.load();
+    config.ci = config.ci || {};
+    config.ci.onPush = onPushType;
+    this.configLoader.save(config, configPath);
 
     this.ciGenerator.generateGitHubActions(workflowType);
   }

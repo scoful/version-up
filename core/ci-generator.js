@@ -5,6 +5,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import ConfigLoader from './config-loader.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,23 +19,6 @@ class CIGenerator {
     this.cwd = cwd;
     this.githubDir = path.join(cwd, '.github', 'workflows');
     this.templatesDir = path.join(__dirname, '..', 'templates', 'github-actions');
-  }
-
-  /**
-   * 检测是否是 GitHub 仓库
-   */
-  isGitHubRepo() {
-    try {
-      const gitConfig = path.join(this.cwd, '.git', 'config');
-      if (!fs.existsSync(gitConfig)) {
-        return false;
-      }
-
-      const content = fs.readFileSync(gitConfig, 'utf-8');
-      return content.includes('github.com');
-    } catch {
-      return false;
-    }
   }
 
   /**
@@ -106,7 +90,16 @@ class CIGenerator {
       return;
     }
 
-    const content = fs.readFileSync(sourcePath, 'utf-8');
+    let content = fs.readFileSync(sourcePath, 'utf-8');
+
+    // 替换 version-bump.yml 中的占位符
+    if (filename === 'version-bump.yml') {
+      const configLoader = new ConfigLoader(this.cwd);
+      const config = configLoader.load();
+      const onPush = config.ci?.onPush || 'minor';
+      content = content.replace(/\{\{ON_PUSH\}\}/g, onPush);
+    }
+
     fs.writeFileSync(targetPath, content, 'utf-8');
 
     console.log(chalk.green(`   ✅ ${filename}`));

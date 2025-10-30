@@ -63,19 +63,12 @@ class ConfigLoader {
       versionFile: 'version.json',
       syncTargets: [],
       hooks: {
-        enabled: false,
+        enabled: true,
         preCommit: 'patch',
       },
-      git: {
-        commitMessage: 'chore: bump version to {{version}} [skip ci]',
-        tagFormat: 'v{{version}}',
-        autoTag: false,
-      },
       ci: {
-        provider: 'none',
         onPush: 'minor',
       },
-      strictMode: false,
     };
   }
 
@@ -88,7 +81,6 @@ class ConfigLoader {
       ...defaults,
       ...userConfig,
       hooks: { ...defaults.hooks, ...userConfig.hooks },
-      git: { ...defaults.git, ...userConfig.git },
       ci: { ...defaults.ci, ...userConfig.ci },
     };
   }

@@ -27,9 +27,9 @@ jobs:
       - name: Install version-up
         run: npm install -g @scoful/version-up
 
-      - name: Bump minor version
+      - name: Bump {{ON_PUSH}} version
         run: |
-          version-up minor
+          version-up {{ON_PUSH}}
           NEW_VERSION=$(node -p "require('./version.json').version")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 

@@ -96,24 +96,12 @@ npm link
   "hooks": {
     "enabled": true,
     "preCommit": "patch",  // 每次 commit 自动 patch+1
-    "prePush": "check",    // push 前检查版本一致性
   },
-  
-  // Git 提交配置
-  "git": {
-    "commitMessage": "chore: bump version to {{version}} [skip ci]",
-    "tagFormat": "v{{version}}",
-    "autoTag": false,  // 是否自动创建 Git Tag
-  },
-  
+
   // CI/CD 配置
   "ci": {
-    "provider": "github-actions",  // github-actions | gitlab-ci | none
     "onPush": "minor",  // push 时自动 minor+1
   },
-  
-  // 错误处理
-  "strictMode": false,  // 宽松模式
 }
 ```
 
@@ -125,7 +113,7 @@ npm link
 ---
 
 ### 决策 4：Git Hooks 安装策略
-**选择**：询问用户 + Lefthook 模式
+**选择**：询问用户 + 原生 Git Hooks
 
 **安装流程**：
 ```bash
@@ -133,20 +121,20 @@ version-up init
 
 # 输出：
 # ✅ 已创建 version.json (v0.0.0)
-# ✅ 已创建 .versionrc.json5
+# ✅ 已创建 .versionrc
 #
-# ❓ 是否安装 Git Hooks 以自动管理版本？
-#    • pre-commit: 每次提交自动 patch+1
-#    • pre-push: 推送前检查版本一致性
+# ❓ 是否启用 Git Hooks 自动版本管理？
+#    • pre-commit: 每次提交自动递增版本
+#    • post-commit: 提交后更新 Git 信息
 #
 # [Y/n]: _
 ```
 
-**Lefthook 安装逻辑**：
-1. 检测 `lefthook` 命令是否已安装
-2. 如果已安装 → 创建 `lefthook.yml` 配置文件
-3. 如果未安装 → 提示用户安装 Lefthook
-4. 用户需手动运行 `lefthook install` 激活 hooks
+**原生 Git Hooks 安装逻辑**：
+1. 直接在 `.git/hooks/` 目录创建 hook 脚本
+2. 无需额外依赖（Husky、Lefthook 等）
+3. 自动设置可执行权限
+4. 如果 hook 已存在，询问是否覆盖
 
 **命令**：
 ```bash
@@ -171,8 +159,7 @@ version-up hooks status      # 查看状态
 ```bash
 version-up init
 
-# 检测到 GitHub 仓库后：
-# ❓ 检测到 GitHub 仓库，是否生成 GitHub Actions 工作流？
+# ❓ 是否生成 GitHub Actions 工作流？
 # [Y/n]: _
 ```
 
@@ -224,9 +211,13 @@ project/
 ---
 
 ### 决策 7：错误处理策略
-**选择**：宽松模式（默认）+ 可配置
+**选择**：基于 `required` 字段的灵活控制
 
-**宽松模式行为**：
+**行为说明**：
+- `required: true` - 文件必须存在，同步失败则中断操作
+- `required: false` - 文件可选，同步失败则跳过并显示警告
+
+**示例输出**：
 ```bash
 version-up patch
 
@@ -235,7 +226,7 @@ version-up patch
 # 🔄 同步版本到其他文件...
 #    ✅ package.json
 #    ⚠️  pyproject.toml (文件不存在，已跳过)
-# 
+#
 # ✅ 版本更新完成！
 # ⚠️  1 个文件同步失败（查看上方详情）
 ```
@@ -243,8 +234,6 @@ version-up patch
 **配置示例**：
 ```json5
 {
-  "strictMode": false,  // 默认宽松
-  
   "syncTargets": [
     {
       "file": "package.json",
@@ -461,9 +450,10 @@ jobs:
       - name: Install version-up
         run: npm install -g version-up
       
-      - name: Bump minor version
+      - name: Bump version (读取配置 ci.onPush)
         run: |
-          version-up minor
+          # 模板会根据 .versionrc 中的 ci.onPush 配置自动替换
+          version-up {{ON_PUSH}}
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add version.json package.json
@@ -515,14 +505,14 @@ jobs:
 - [ ] 实现基础命令（`patch`, `minor`, `major`, `show`, `set`）
 
 ### 阶段 2：配置与同步（1 天）
-- [ ] 实现 JSON5 配置解析
+- [ ] 实现 JSON 配置解析
 - [ ] 实现 Adapter 系统（`package.json`, `pyproject.toml` 等）
-- [ ] 实现同步逻辑（宽松模式 + 可配置）
+- [ ] 实现同步逻辑（基于 `required` 字段）
 
 ### 阶段 3：自动化（1 天）
 - [ ] 实现 `init` 命令（交互式）
-- [ ] 实现 Git Hooks 安装（Lefthook 模式）
-- [ ] 实现 GitHub Actions 模板生成
+- [ ] 实现 Git Hooks 安装（原生 Git Hooks）
+- [ ] 实现 GitHub Actions 模板生成（支持 ci.onPush 配置）
 
 ### 阶段 4：发布（0.5 天）
 - [ ] 创建 `package.json`（npm 发布配置）
@@ -544,8 +534,7 @@ jobs:
 ## 📚 参考资料
 
 - 语义化版本规范：https://semver.org/
-- Lefthook：https://github.com/evilmartians/lefthook
-- JSON5：https://json5.org/
+- Git Hooks：https://git-scm.com/docs/githooks
 - GitHub Actions：https://docs.github.com/en/actions
 
 ---
