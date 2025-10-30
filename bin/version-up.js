@@ -46,6 +46,9 @@ class CLI {
     const args = process.argv.slice(2);
     const command = args[0];
 
+    // 显示工具版本（灰色，不显眼）
+    this.showToolVersion();
+
     try {
       // init 命令不需要初始化
       if (command === 'init') {
@@ -308,7 +311,16 @@ class CLI {
   }
 
   /**
-   * 显示版本号
+   * 显示工具版本（简洁版，每次命令前显示）
+   */
+  showToolVersion() {
+    const pkgPath = join(__dirname, '..', 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+    console.log(chalk.gray(`version-up v${pkg.version}\n`));
+  }
+
+  /**
+   * 显示版本号（完整版，用于 version 命令）
    */
   showVersion() {
     const pkgPath = join(__dirname, '..', 'package.json');
