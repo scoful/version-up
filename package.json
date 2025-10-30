@@ -8,7 +8,10 @@
     "version-up": "./bin/version-up.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check": "node bin/version-up.js show",
+    "release:patch": "node bin/version-up.js patch && npm publish",
+    "release:minor": "node bin/version-up.js minor && npm publish",
+    "release:major": "node bin/version-up.js major && npm publish"
   },
   "keywords": [
     "version",

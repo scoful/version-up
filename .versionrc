@@ -1,0 +1,15 @@
+{
+  "versionFile": "version.json",
+  "syncTargets": [
+    {
+      "file": "package.json",
+      "path": "version",
+      "adapter": "package-json",
+      "required": true
+    }
+  ],
+  "hooks": {
+    "enabled": true,
+    "preCommit": "patch"
+  }
+}
