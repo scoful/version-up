@@ -38,6 +38,23 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
           git add version.json
+
+          # Add all synced files from config
+          if [ -f .versionrc ]; then
+            SYNC_FILES=$(node -e "
+              try {
+                const fs = require('fs');
+                const config = JSON.parse(fs.readFileSync('.versionrc', 'utf-8'));
+                if (config.syncTargets && config.syncTargets.length > 0) {
+                  console.log(config.syncTargets.map(t => t.file).join(' '));
+                }
+              } catch (e) {}
+            ")
+            if [ -n \"$SYNC_FILES\" ]; then
+              git add $SYNC_FILES 2>/dev/null || true
+            fi
+          fi
+
           git commit -m "chore: bump version to ${{ env.NEW_VERSION }} [skip ci]" || echo "No changes to commit"
           git push origin ${{ github.ref_name }}
 

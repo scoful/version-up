@@ -1,6 +1,6 @@
 {
   "name": "@scoful/version-up",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Automated semantic versioning with native Git hooks for multi-language projects",
   "type": "module",
   "main": "bin/version-up.js",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "check": "node bin/version-up.js show",
-    "release:patch": "node bin/version-up.js patch && npm publish",
+    "release": "npm publish",
     "release:minor": "node bin/version-up.js minor && npm publish",
     "release:major": "node bin/version-up.js major && npm publish"
   },
