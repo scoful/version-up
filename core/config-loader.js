@@ -66,9 +66,6 @@ class ConfigLoader {
         enabled: true,
         preCommit: 'patch',
       },
-      ci: {
-        onPush: 'minor',
-      },
     };
   }
 

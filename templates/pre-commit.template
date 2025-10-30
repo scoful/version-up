@@ -6,13 +6,34 @@
 if command -v version-up >/dev/null 2>&1; then
   # Use globally installed version-up
   version-up {{BUMP_TYPE}} --skip-git-info
-  git add version.json
 elif command -v npx >/dev/null 2>&1; then
   # Fallback to npx (finds local or global)
   npx version-up {{BUMP_TYPE}} --skip-git-info
-  git add version.json
 else
   echo "⚠️  version-up not found. Please install: npm install -g version-up"
   exit 1
+fi
+
+# Add version.json and all synced files from config
+git add version.json
+
+# Parse .versionrc and add all syncTargets files
+if [ -f .versionrc ]; then
+  if command -v node >/dev/null 2>&1; then
+    SYNC_FILES=$(node -e "
+      try {
+        const fs = require('fs');
+        const config = JSON.parse(fs.readFileSync('.versionrc', 'utf-8'));
+        if (config.syncTargets && config.syncTargets.length > 0) {
+          console.log(config.syncTargets.map(t => t.file).join(' '));
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    ")
+    if [ -n "$SYNC_FILES" ]; then
+      git add $SYNC_FILES 2>/dev/null || true
+    fi
+  fi
 fi
 
