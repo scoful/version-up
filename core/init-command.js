@@ -5,10 +5,15 @@ import path from 'path';
 import { execSync } from 'child_process';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import ConfigLoader from './config-loader.js';
 import VersionManager from './version-manager.js';
 import HooksInstaller from './hooks-installer.js';
 import CIGenerator from './ci-generator.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Init 命令
@@ -77,8 +82,41 @@ class InitCommand {
     if (initGit) {
       execSync('git init', { cwd: this.cwd, stdio: 'inherit' });
       console.log(chalk.green('✅ Git 仓库初始化成功\n'));
+
+      // 创建 .gitignore
+      await this.createGitignore();
     } else {
       throw new Error('version-up 需要 Git 仓库');
+    }
+  }
+
+  /**
+   * 创建 .gitignore 文件
+   */
+  async createGitignore() {
+    const gitignorePath = path.join(this.cwd, '.gitignore');
+
+    // 如果 .gitignore 已存在，跳过创建
+    if (fs.existsSync(gitignorePath)) {
+      if (this.debug) {
+        console.log(chalk.yellow('⚠️  .gitignore 已存在,跳过创建\n'));
+      }
+      return;
+    }
+
+    try {
+      // 读取模板文件
+      const templatePath = path.join(__dirname, '..', 'templates', '.gitignore.template');
+      const templateContent = fs.readFileSync(templatePath, 'utf-8');
+
+      // 写入 .gitignore
+      fs.writeFileSync(gitignorePath, templateContent, 'utf-8');
+      console.log(chalk.green('✅ 已创建 .gitignore\n'));
+    } catch (error) {
+      if (this.debug) {
+        console.error(chalk.yellow(`⚠️  创建 .gitignore 失败: ${error.message}\n`));
+      }
+      // 不中断流程，继续执行
     }
   }
 

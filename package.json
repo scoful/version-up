@@ -1,6 +1,6 @@
 {
   "name": "@scoful/version-up",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Automated semantic versioning with native Git hooks for multi-language projects",
   "type": "module",
   "main": "bin/version-up.js",
