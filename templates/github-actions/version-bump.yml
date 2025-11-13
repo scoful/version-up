@@ -28,12 +28,15 @@ jobs:
         run: npm install -g @scoful/version-up
 
       - name: Bump {{ON_PUSH}} version
+        id: bump
         run: |
           version-up {{ON_PUSH}}
           NEW_VERSION=$(node -p "require('./version.json').version")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and push
+        id: commit
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
@@ -57,4 +60,8 @@ jobs:
 
           git commit -m "chore: bump version to ${{ env.NEW_VERSION }} [skip ci]" || echo "No changes to commit"
           git push origin ${{ github.ref_name }}
+
+          # Store commit SHA for potential rollback
+          COMMIT_SHA=$(git rev-parse HEAD)
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
 

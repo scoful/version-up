@@ -10,11 +10,14 @@ jobs:
   build:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,13 +32,44 @@ jobs:
           echo "Building version: $VERSION"
 
       - name: Build
+        id: build
+        continue-on-error: true
         run: |
           echo "Building v${{ steps.version.outputs.VERSION }}"
           # Add your build commands here
           # npm install
           # npm run build
 
+      - name: Rollback version on build failure
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "❌ 构建失败，开始回滚版本..."
+
+          # 配置 Git 用户信息
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+
+          # 检查最后一次 commit 是否是版本更新
+          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LAST_COMMIT_MSG" == *"bump version"* ]]; then
+            echo "🔄 检测到版本更新 commit，执行回滚..."
+
+            # 回滚到上一个 commit
+            git reset --hard HEAD~1
+
+            # 强制推送回滚
+            git push --force origin ${{ github.event.workflow_run.head_branch }}
+
+            echo "✅ 版本已回滚到上一个稳定版本"
+          else
+            echo "ℹ️ 最后一次 commit 不是版本更新，无需回滚"
+          fi
+
+          # 中断工作流
+          exit 1
+
       - name: Deploy
+        if: steps.build.outcome == 'success'
         run: |
           echo "Deploying v${{ steps.version.outputs.VERSION }}"
           # Add your deployment commands here
