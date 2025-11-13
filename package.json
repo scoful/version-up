@@ -1,14 +1,18 @@
 {
   "name": "@scoful/version-up",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Automated semantic versioning with native Git hooks for multi-language projects",
   "type": "module",
+  "packageManager": "npm@10.x",
   "main": "bin/version-up.js",
   "bin": {
     "version-up": "./bin/version-up.js"
   },
   "scripts": {
     "check": "node bin/version-up.js show",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "format:unsafe": "biome check --write --unsafe-fixes .",
     "release": "npm publish",
     "release:minor": "node bin/version-up.js minor && npm publish",
     "release:major": "node bin/version-up.js major && npm publish"
@@ -53,5 +57,8 @@
     "@iarna/toml": "^2.2.5",
     "chalk": "^4.1.2",
     "inquirer": "^9.2.0"
+  },
+  "devDependencies": {
+    "biome": "^0.3.3"
   }
 }
