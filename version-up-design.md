@@ -120,8 +120,8 @@ version-up init
 # ✅ 已创建 .versionrc
 #
 # ❓ 是否启用 Git Hooks 自动版本管理？
-#    • pre-commit: 每次提交自动递增版本
-#    • post-commit: 提交后更新 Git 信息
+#    • pre-commit: 每次提交前自动递增版本
+#    • show/refresh: 实时读取 Git 信息，不改写提交历史
 #
 # [Y/n]: _
 ```
@@ -273,12 +273,7 @@ version-up init
 ```json
 {
   "version": "0.0.0",
-  "major": 0,
-  "minor": 0,
-  "patch": 0,
   "buildTime": "2025-10-27T10:00:00.000Z",
-  "gitCommit": "abc123",
-  "gitBranch": "main",
   "environment": "development"
 }
 ```

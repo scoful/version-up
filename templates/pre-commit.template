@@ -1,14 +1,15 @@
 #!/bin/sh
-# version-up pre-commit hook
-# Auto-increment version on commit
+# version-up hook: pre-commit
+# version-up hook-version: 2
+# Auto-increment version before commit
 
 # Try to find version-up command
 if command -v version-up >/dev/null 2>&1; then
   # Use globally installed version-up
-  version-up {{BUMP_TYPE}} --skip-git-info
+  version-up {{BUMP_TYPE}}
 elif command -v npx >/dev/null 2>&1; then
   # Fallback to npx (finds local or global)
-  npx version-up {{BUMP_TYPE}} --skip-git-info
+  npx version-up {{BUMP_TYPE}}
 else
   echo "⚠️  version-up not found. Please install: npm install -g version-up"
   exit 1
@@ -36,4 +37,3 @@ if [ -f .versionrc ]; then
     fi
   fi
 fi
-

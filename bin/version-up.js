@@ -24,6 +24,7 @@ class CLI {
     this.versionManager = null;
     this.configLoader = null;
     this.fileSync = null;
+    this.hooksInstaller = null;
     this.config = null;
     // 检测调试模式
     this.debug = process.argv.includes('--debug') || process.argv.includes('--verbose');
@@ -37,6 +38,7 @@ class CLI {
     this.config = this.configLoader.load();
     this.versionManager = new VersionManager(this.cwd, this.config.versionFile);
     this.fileSync = new FileSync(this.cwd);
+    this.hooksInstaller = new HooksInstaller(this.cwd, this.debug);
   }
 
   /**
@@ -162,9 +164,21 @@ class CLI {
   }
 
   /**
+   * 自动迁移旧版 version-up hooks
+   */
+  async migrateManagedHooks() {
+    if (!this.hooksInstaller) {
+      return;
+    }
+
+    this.hooksInstaller.migrateManagedHooks({ silent: false });
+  }
+
+  /**
    * 处理 patch 命令
    */
   async handlePatch(args) {
+    await this.migrateManagedHooks();
     const skipGitInfo = args.includes('--skip-git-info');
     const result = this.versionManager.patch(skipGitInfo);
     console.log(chalk.green(`\n✅ 版本已更新: ${result.old} → ${result.new}\n`));
@@ -175,6 +189,7 @@ class CLI {
    * 处理 minor 命令
    */
   async handleMinor(args) {
+    await this.migrateManagedHooks();
     const skipGitInfo = args.includes('--skip-git-info');
     const result = this.versionManager.minor(skipGitInfo);
     console.log(chalk.green(`\n✅ 版本已更新: ${result.old} → ${result.new}\n`));
@@ -185,6 +200,7 @@ class CLI {
    * 处理 major 命令
    */
   async handleMajor(args) {
+    await this.migrateManagedHooks();
     const skipGitInfo = args.includes('--skip-git-info');
     const result = this.versionManager.major(skipGitInfo);
     console.log(chalk.green(`\n✅ 版本已更新: ${result.old} → ${result.new}\n`));
@@ -200,6 +216,7 @@ class CLI {
       process.exit(1);
     }
 
+    await this.migrateManagedHooks();
     const skipGitInfo = args.includes('--skip-git-info');
     const result = this.versionManager.set(version, skipGitInfo);
     console.log(chalk.green(`\n✅ 版本已设置: ${result.old} → ${result.new}\n`));
@@ -211,9 +228,10 @@ class CLI {
    */
   async handleRefresh() {
     const result = this.versionManager.refresh();
-    console.log(chalk.green(`\n✅ Git 信息已更新\n`));
+    console.log(chalk.green('\n✅ 当前 Git 运行时信息\n'));
     console.log(chalk.cyan(`   Git Commit: ${result.gitCommit}`));
-    console.log(chalk.cyan(`   Git Branch: ${result.gitBranch}\n`));
+    console.log(chalk.cyan(`   Git Branch: ${result.gitBranch}`));
+    console.log(chalk.gray('   (不会改写 version.json 或提交历史)\n'));
   }
 
   /**
@@ -290,7 +308,7 @@ class CLI {
     console.log('  major                major 版本 +1');
     console.log('  set <version>        设置指定版本');
     console.log('  show                 显示当前版本');
-    console.log('  refresh              刷新 Git 信息 (不改变版本号)');
+    console.log('  refresh              显示当前 Git 信息 (不改写文件)');
     console.log('  sync                 手动同步版本到其他文件');
     console.log('  hooks <sub>          管理 Git Hooks (install|uninstall|status)');
     console.log('  ci <sub>             管理 CI 模板 (generate|template|remove)');
@@ -299,7 +317,7 @@ class CLI {
     console.log(chalk.bold('选项:'));
     console.log('  --no-hooks           跳过 Git Hooks 安装 (init)');
     console.log('  --no-ci              跳过 CI 配置 (init)');
-    console.log('  --skip-git-info      跳过 Git 信息获取 (patch|minor|major|set)');
+    console.log('  --skip-git-info      兼容旧 hook 的保留参数 (已无实际作用)');
     console.log('  --format=<type>      输出格式 (show): version|json|full');
     console.log('  --debug, --verbose   显示详细调试信息\n');
     console.log(chalk.bold('示例:'));
@@ -335,4 +353,3 @@ cli.run().catch((error) => {
   console.error(chalk.red(`\n❌ 未知错误: ${error.message}\n`));
   process.exit(1);
 });
-

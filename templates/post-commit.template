@@ -1,28 +1,5 @@
 #!/bin/sh
-# version-up post-commit hook
-# Update Git commit info after commit
-
-# Prevent infinite loop: skip if already amending
-if [ -n "$VERSION_UP_AMENDING" ]; then
-  exit 0
-fi
-
-# Set flag to prevent re-entry
-export VERSION_UP_AMENDING=1
-
-# Try to find version-up command
-if command -v version-up >/dev/null 2>&1; then
-  # Use globally installed version-up
-  version-up refresh
-  git add version.json
-  git commit --amend --no-edit --no-verify
-elif command -v npx >/dev/null 2>&1; then
-  # Fallback to npx (finds local or global)
-  npx version-up refresh
-  git add version.json
-  git commit --amend --no-edit --no-verify
-else
-  echo "⚠️  version-up not found. Please install: npm install -g version-up"
-  exit 1
-fi
-
+# version-up hook: post-commit
+# version-up hook-version: legacy
+# Deprecated: version-up no longer uses post-commit hooks.
+exit 0

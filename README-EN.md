@@ -15,7 +15,7 @@ English | [简体中文](./README.md)
 - 📦 **Multi-Language** - Sync versions across package.json, Cargo.toml, pyproject.toml, etc.
 - 🎯 **Semantic Versioning** - Full semver support (major.minor.patch)
 - 🔧 **GitHub Actions** - Built-in CI/CD workflow templates
-- 💡 **Smart Commit ID** - Accurate Git commit tracking with post-commit hooks
+- 🧭 **Live Git Info** - Read current Git state in `show`/`refresh` without rewriting history
 
 ## 📦 Installation
 
@@ -41,7 +41,7 @@ version-up init
 
 This will:
 - Create `version.json` with initial version
-- Install Git hooks (pre-commit, post-commit)
+- Install Git hooks (`pre-commit`)
 - Generate GitHub Actions workflows (optional)
 
 ### 2. Make Changes & Commit
@@ -53,11 +53,8 @@ git commit -m "feat: add new feature"
 
 The pre-commit hook will automatically:
 - Increment patch version (0.0.1 → 0.0.2)
-- Update `version.json` with build metadata
-
-The post-commit hook will:
-- Update Git commit ID in `version.json`
-- Amend the commit with accurate metadata
+- Sync `version.json` and other version files
+- Finalize version changes before the commit object is created
 
 ### 3. Check Version
 
@@ -98,7 +95,7 @@ version-up show --format=json    # JSON format
 ### Git Hooks
 
 ```bash
-version-up hooks install    # Install hooks
+version-up hooks install    # Install or upgrade hooks (recommended after upgrading)
 version-up hooks uninstall  # Remove hooks
 version-up hooks status     # Check hook status
 ```
@@ -114,9 +111,24 @@ version-up ci remove     # Remove workflows
 ### Utilities
 
 ```bash
-version-up refresh  # Update Git info without changing version
+version-up refresh  # Show current Git info without modifying files
 version-up sync     # Sync version to other files
 ```
+
+### Incremental Upgrade For Initialized Projects
+
+After upgrading `@scoful/version-up`, run this once in the project root:
+
+```bash
+version-up hooks install
+```
+
+This will:
+- Upgrade the version-up managed `pre-commit` hook to the latest template
+- Remove the legacy `post-commit` hook installed by older versions
+- Keep your own non-version-up `post-commit` hook untouched
+
+If you forget to run it first, the next version-up managed bump command will also auto-migrate legacy hooks.
 
 ## ⚙️ Configuration
 
@@ -153,20 +165,16 @@ Create `.versionrc` in your project root:
 Automatically increments patch version and adds all synced files on every commit:
 
 ```bash
-version-up patch --skip-git-info
+version-up patch
 git add version.json
 # Automatically adds all files in syncTargets (e.g., package.json, Cargo.toml)
 ```
 
 ### post-commit
 
-Updates Git commit ID after commit completes:
+The current strategy no longer installs `post-commit`.
 
-```bash
-version-up refresh
-git add version.json
-git commit --amend --no-edit --no-verify
-```
+`Git Commit` and `Git Branch` are read live by `version-up show` / `version-up refresh`, so the project does not amend history after the commit completes.
 
 ## 🎯 GitHub Actions
 
@@ -188,11 +196,11 @@ Triggered after version bump, handles build and deployment.
 {
   "version": "0.1.0",
   "buildTime": "2025-10-29T08:30:45.123Z",
-  "gitCommit": "a1b2c3d",
-  "gitBranch": "master",
   "environment": "development"
 }
 ```
+
+`gitCommit` / `gitBranch` are runtime Git metadata and are no longer persisted into the tracked `version.json` file.
 
 ## 🤝 Contributing
 
@@ -207,4 +215,3 @@ MIT © [scoful](https://github.com/scoful)
 - [npm Package](https://www.npmjs.com/package/@scoful/version-up)
 - [GitHub Repository](https://github.com/scoful/version-up)
 - [Issue Tracker](https://github.com/scoful/version-up/issues)
-

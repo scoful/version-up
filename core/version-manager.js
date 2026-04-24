@@ -3,12 +3,6 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
-import chalk from 'chalk';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /**
  * 版本管理器
@@ -31,7 +25,7 @@ class VersionManager {
 
     try {
       const content = fs.readFileSync(this.versionFilePath, 'utf-8');
-      this.versionData = JSON.parse(content);
+      this.versionData = this.normalizeVersionData(JSON.parse(content));
       return this.versionData;
     } catch (error) {
       throw new Error(`Failed to read version file: ${error.message}`);
@@ -43,13 +37,34 @@ class VersionManager {
    */
   write(data) {
     try {
-      const content = JSON.stringify(data, null, 2);
+      const normalized = this.normalizeVersionData(data);
+      const content = JSON.stringify(normalized, null, 2);
       fs.writeFileSync(this.versionFilePath, content, 'utf-8');
-      this.versionData = data;
-      return data;
+      this.versionData = normalized;
+      return normalized;
     } catch (error) {
       throw new Error(`Failed to write version file: ${error.message}`);
     }
+  }
+
+  /**
+   * 规范化版本文件结构
+   * 兼容旧版 version.json，并在写入时收敛为稳定字段
+   */
+  normalizeVersionData(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('Invalid version file content');
+    }
+
+    if (!data.version || typeof data.version !== 'string') {
+      throw new Error('Invalid version file: missing version');
+    }
+
+    return {
+      version: data.version,
+      buildTime: data.buildTime ?? null,
+      environment: data.environment ?? (process.env.NODE_ENV || 'development'),
+    };
   }
 
   /**
@@ -67,13 +82,21 @@ class VersionManager {
   /**
    * 构建版本数据对象
    */
-  buildVersionData(version, skipGitInfo = false) {
+  buildVersionData(version, _skipGitInfo = false) {
     return {
       version,
       buildTime: new Date().toISOString(),
-      gitCommit: skipGitInfo ? null : this.getGitCommit(),
-      gitBranch: skipGitInfo ? null : this.getGitBranch(),
       environment: process.env.NODE_ENV || 'development',
+    };
+  }
+
+  /**
+   * 获取当前 Git 运行时信息
+   */
+  getGitInfo() {
+    return {
+      gitCommit: this.getGitCommit(),
+      gitBranch: this.getGitBranch(),
     };
   }
 
@@ -173,14 +196,10 @@ class VersionManager {
    */
   refresh() {
     const current = this.read();
-    const updated = {
+    return {
       ...current,
-      buildTime: new Date().toISOString(),
-      gitCommit: this.getGitCommit(),
-      gitBranch: this.getGitBranch(),
+      ...this.getGitInfo(),
     };
-    this.write(updated);
-    return updated;
   }
 
   /**
@@ -188,7 +207,10 @@ class VersionManager {
    */
   show() {
     const data = this.read();
-    return data;
+    return {
+      ...data,
+      ...this.getGitInfo(),
+    };
   }
 
   /**
@@ -215,4 +237,3 @@ class VersionManager {
 }
 
 export default VersionManager;
-

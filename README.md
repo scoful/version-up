@@ -15,7 +15,7 @@
 - 📦 **多语言支持** - 同步版本到 package.json、Cargo.toml、pyproject.toml 等
 - 🎯 **语义化版本** - 完整支持 semver (major.minor.patch)
 - 🔧 **GitHub Actions** - 内置 CI/CD 工作流模板
-- 💡 **智能 Commit ID** - 通过 post-commit hook 准确追踪 Git commit
+- 🧭 **实时 Git 信息** - `show`/`refresh` 时读取当前 Git 状态，不改写提交历史
 
 ## 📦 安装
 
@@ -41,7 +41,7 @@ version-up init
 
 这将会：
 - 创建 `version.json` 初始版本文件
-- 安装 Git hooks (pre-commit, post-commit)
+- 安装 Git hooks (`pre-commit`)
 - 生成 GitHub Actions 工作流（可选）
 
 ### 2. 修改代码并提交
@@ -53,11 +53,8 @@ git commit -m "feat: 添加新功能"
 
 pre-commit hook 会自动：
 - 递增 patch 版本 (0.0.1 → 0.0.2)
-- 更新 `version.json` 构建元数据
-
-post-commit hook 会：
-- 更新 `version.json` 中的 Git commit ID
-- 使用准确的元数据修正提交
+- 同步 `version.json` 和其他版本文件
+- 在提交前固定最终要提交的版本变更
 
 ### 3. 查看版本
 
@@ -98,7 +95,7 @@ version-up show --format=json    # JSON 格式
 ### Git Hooks
 
 ```bash
-version-up hooks install    # 安装 hooks
+version-up hooks install    # 安装或升级 hooks（推荐升级后执行一次）
 version-up hooks uninstall  # 卸载 hooks
 version-up hooks status     # 检查 hook 状态
 ```
@@ -114,9 +111,24 @@ version-up ci remove     # 删除工作流
 ### 工具
 
 ```bash
-version-up refresh  # 更新 Git 信息而不改变版本号
+version-up refresh  # 显示当前 Git 信息（不修改文件）
 version-up sync     # 同步版本到其他文件
 ```
+
+### 已初始化项目如何增量升级
+
+升级 `@scoful/version-up` 后，推荐在项目根目录执行一次：
+
+```bash
+version-up hooks install
+```
+
+这会：
+- 升级受 version-up 管理的 `pre-commit` 到最新模板
+- 自动移除旧版 `post-commit` hook
+- 保留你自己的非 version-up `post-commit` hook
+
+如果你忘了先执行，下一次触发 version-up 管理的版本升级命令时，也会自动迁移旧版 hook。
 
 ## ⚙️ 配置
 
@@ -153,20 +165,16 @@ version-up sync     # 同步版本到其他文件
 每次提交时自动递增 patch 版本，并添加所有同步的文件：
 
 ```bash
-version-up patch --skip-git-info
+version-up patch
 git add version.json
 # 自动添加所有 syncTargets 中的文件（如 package.json, Cargo.toml 等）
 ```
 
 ### post-commit
 
-提交完成后更新 Git commit ID：
+当前策略不再安装 `post-commit`。
 
-```bash
-version-up refresh
-git add version.json
-git commit --amend --no-edit --no-verify
-```
+`Git Commit` 和 `Git Branch` 会在 `version-up show` / `version-up refresh` 时实时读取，避免在提交完成后再次 amend 历史。
 
 ## 🎯 GitHub Actions
 
@@ -188,11 +196,11 @@ git commit --amend --no-edit --no-verify
 {
   "version": "0.1.0",
   "buildTime": "2025-10-29T08:30:45.123Z",
-  "gitCommit": "a1b2c3d",
-  "gitBranch": "master",
   "environment": "development"
 }
 ```
+
+`gitCommit` / `gitBranch` 属于运行时 Git 信息，不再持久化到受 Git 跟踪的 `version.json` 中。
 
 ## 🤝 贡献
 
@@ -207,4 +215,3 @@ MIT © [scoful](https://github.com/scoful)
 - [npm 包](https://www.npmjs.com/package/@scoful/version-up)
 - [GitHub 仓库](https://github.com/scoful/version-up)
 - [问题追踪](https://github.com/scoful/version-up/issues)
-
