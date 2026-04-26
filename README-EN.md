@@ -73,6 +73,22 @@ Output:
    Environment: development
 ```
 
+## 📦 Publishing This Package
+
+Maintainers should use the repo script when publishing to the official npm registry:
+
+```bash
+npm run release:login    # First-time official registry login with browser/OTP/security key
+npm run release:dry-run  # Local package dry run without changing your default mirror
+npm run release          # Publish the current version
+npm run release:minor    # minor + publish
+npm run release:major    # major + publish
+```
+
+- The release script always targets `https://registry.npmjs.org/`
+- It does not modify your global `registry`
+- If your account uses write-level 2FA, `npm publish` still requires manual confirmation
+
 ## 📖 Commands
 
 ### Version Management

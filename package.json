@@ -1,6 +1,6 @@
 {
   "name": "@scoful/version-up",
-  "version": "0.1.10",
+  "version": "0.2.1",
   "description": "Automated semantic versioning with native Git hooks for multi-language projects",
   "type": "module",
   "packageManager": "npm@10.x",
@@ -13,9 +13,15 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "format:unsafe": "biome check --write --unsafe-fixes .",
-    "release": "npm publish",
-    "release:minor": "node bin/version-up.js minor && npm publish",
-    "release:major": "node bin/version-up.js major && npm publish"
+    "release": "node scripts/release-npm.js publish",
+    "release:login": "node scripts/release-npm.js login",
+    "release:dry-run": "node scripts/release-npm.js publish --dry-run",
+    "release:minor": "node bin/version-up.js minor && node scripts/release-npm.js publish",
+    "release:major": "node bin/version-up.js major && node scripts/release-npm.js publish"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "keywords": [
     "version",

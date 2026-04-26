@@ -73,6 +73,22 @@ version-up show
    环境: development
 ```
 
+## 📦 发布本项目
+
+维护者发布到 npm 官方源时，推荐使用仓库内脚本：
+
+```bash
+npm run release:login    # 首次登录官方源，按浏览器/OTP/安全密钥提示完成
+npm run release:dry-run  # 本地预演打包，不修改默认镜像配置
+npm run release          # 发布当前版本
+npm run release:minor    # minor + publish
+npm run release:major    # major + publish
+```
+
+- 发布脚本固定使用 `https://registry.npmjs.org/`
+- 不会修改全局 `registry`
+- 如果账号启用了 write 级 2FA，`npm publish` 阶段仍需手动确认
+
 ## 📖 命令
 
 ### 版本管理
